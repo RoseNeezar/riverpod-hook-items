@@ -4,9 +4,34 @@ import 'package:trackitem/models/item.model.dart';
 import 'package:trackitem/repositories/custom.exception.dart';
 import 'package:trackitem/repositories/item.repo.dart';
 
+enum ItemListFilter {
+  all,
+  obtained,
+}
+
+final itemListFilterProvider =
+    StateProvider<ItemListFilter>((_) => ItemListFilter.all);
+
+final filteredItemListProvider = Provider<List<Item>>((ref) {
+  final itemListFilterState = ref.watch(itemListFilterProvider);
+  final itemListState = ref.watch(itemListControllerProvider);
+
+  return itemListState.maybeWhen(
+      data: (items) {
+        switch (itemListFilterState.state) {
+          case ItemListFilter.obtained:
+            return items.where((element) => element.obtained).toList();
+          default:
+            return items;
+        }
+      },
+      orElse: () => []);
+});
+
 final itemListExceptionProvider = StateProvider<CustomException?>((_) => null);
 
-final itemListControllerProvider = StateNotifierProvider((ref) {
+final itemListControllerProvider =
+    StateNotifierProvider<ItemListController, AsyncValue<List<Item>>>((ref) {
   final user = ref.watch(authControllerProvider);
   return ItemListController(ref.read, user?.uid);
 });
